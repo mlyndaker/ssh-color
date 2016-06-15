@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# shade factor greater than 0
+DARKNESS="3"
+
+# 0 = black, 65535 = max
+R_RESET=0
+G_RESET=0
+B_RESET=0
+
+HOSTNAME=`echo $@ | sed s/.*@//`
+HASH=`echo ${HOSTNAME} | md5`
+R_DEC=`echo $(($((16#${HASH:0:4})) /${DARKNESS}))`
+G_DEC=`echo $(($((16#${HASH:4:4})) /${DARKNESS}))`
+B_DEC=`echo $(($((16#${HASH:8:4})) /${DARKNESS}))`
+
+WINDOW=`osascript -e 'front window of app "Terminal"'`
+
+set_bg () {
+  osascript -e "tell application \"Terminal\" to set background color of ${WINDOW} to $1"
+}
+
+on_exit () {
+  set_bg "{${R_RESET}, ${G_RESET}, ${B_RESET}}"
+}
+trap on_exit EXIT SIGINT SIGTERM
+
+set_bg "{${R_DEC}, ${G_DEC}, ${B_DEC}}"
+
+/usr/bin/ssh "$@"
+
